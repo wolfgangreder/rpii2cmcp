@@ -1,0 +1,28 @@
+[Unit]
+Description=RPI I2C MCP Server
+Documentation=https://github.com/wolfgangreder/rpii2cmcp
+After=network.target
+
+[Service]
+Type=simple
+User=rpii2cmcp
+Group=i2c
+WorkingDirectory=/opt/rpii2cmcp
+ExecStart=/usr/bin/java -jar /opt/rpii2cmcp/target/quarkus-app/quarkus-run.jar
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/rpii2cmcp
+
+# Resource limits
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
