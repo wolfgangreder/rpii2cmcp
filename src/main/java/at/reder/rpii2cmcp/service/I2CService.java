@@ -142,6 +142,7 @@ public class I2CService {
         List<String> cmdList = new ArrayList<>();
         cmdList.add(i2cgetPath);
         cmdList.add("-y");
+        cmdList.add("-a");  // Support for low addresses
         cmdList.add(String.valueOf(command.getBus()));
         cmdList.add(command.getAddress());
         cmdList.add(command.getRegister());
@@ -181,6 +182,7 @@ public class I2CService {
         List<String> cmdList = new ArrayList<>();
         cmdList.add(i2csetPath);
         cmdList.add("-y");
+        cmdList.add("-a");  // Support for low addresses
         cmdList.add(String.valueOf(command.getBus()));
         cmdList.add(command.getAddress());
         cmdList.add(command.getRegister());

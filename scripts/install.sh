@@ -68,16 +68,52 @@ if [ -e /dev/i2c-1 ]; then
 fi
 
 echo ""
-echo "Step 5: Installing Java 17 (if not present)..."
-if ! command -v java &> /dev/null || ! java -version 2>&1 | grep -q "17"; then
-    apt-get install -y openjdk-17-jdk
-    echo "Java 17 installed"
+echo "Step 5: Detecting i2c-tools paths..."
+I2CGET_PATH=$(command -v i2cget 2>/dev/null || echo "/usr/sbin/i2cget")
+I2CSET_PATH=$(command -v i2cset 2>/dev/null || echo "/usr/sbin/i2cset")
+echo "Detected i2cget at: $I2CGET_PATH"
+echo "Detected i2cset at: $I2CSET_PATH"
+
+# Update application.yml with detected paths
+YAML_FILE="$(dirname "$0")/../src/main/resources/application.yml"
+if [ -f "$YAML_FILE" ]; then
+    echo "Updating application.yml with detected i2c-tools paths..."
+    sed -i "s|get:.*|get: $I2CGET_PATH|" "$YAML_FILE"
+    sed -i "s|set:.*|set: $I2CSET_PATH|" "$YAML_FILE"
+    echo "Configuration updated"
 else
-    echo "Java 17 already installed"
+    echo "Warning: application.yml not found at $YAML_FILE"
 fi
 
 echo ""
-echo "Step 6: Installing Maven (if not present)..."
+echo "Step 6: Installing Java 17 or higher (if not present)..."
+if ! command -v java &> /dev/null; then
+    # Try Java 21 first, fallback to Java 17
+    if apt-cache show openjdk-21-jdk &> /dev/null; then
+        apt-get install -y openjdk-21-jdk
+        echo "Java 21 installed"
+    else
+        apt-get install -y openjdk-17-jdk
+        echo "Java 17 installed"
+    fi
+else
+    JAVA_VERSION=$(java -version 2>&1 | head -n 1 | cut -d'"' -f2 | cut -d'.' -f1)
+    if [ "$JAVA_VERSION" -ge 17 ]; then
+        echo "Java $JAVA_VERSION already installed (compatible)"
+    else
+        echo "Java version too old, upgrading..."
+        if apt-cache show openjdk-21-jdk &> /dev/null; then
+            apt-get install -y openjdk-21-jdk
+            echo "Java 21 installed"
+        else
+            apt-get install -y openjdk-17-jdk
+            echo "Java 17 installed"
+        fi
+    fi
+fi
+
+echo ""
+echo "Step 7: Installing Maven (if not present)..."
 if ! command -v mvn &> /dev/null; then
     apt-get install -y maven
     echo "Maven installed"
@@ -86,12 +122,12 @@ else
 fi
 
 echo ""
-echo "Step 7: Building the application..."
+echo "Step 8: Building the application..."
 cd "$(dirname "$0")/.."
 sudo -u ${SUDO_USER:-$USER} mvn clean package -DskipTests
 
 echo ""
-echo "Step 8: Creating systemd service..."
+echo "Step 9: Creating systemd service..."
 cat > /etc/systemd/system/rpii2cmcp.service << EOF
 [Unit]
 Description=RPI I2C MCP Server
@@ -115,7 +151,7 @@ systemctl daemon-reload
 echo "Systemd service created"
 
 echo ""
-echo "Step 9: Setting up firewall (if UFW is active)..."
+echo "Step 10: Setting up firewall (if UFW is active)..."
 if command -v ufw &> /dev/null && ufw status | grep -q "Status: active"; then
     ufw allow 8080/tcp
     echo "Firewall rule added for port 8080"

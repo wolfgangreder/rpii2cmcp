@@ -4,7 +4,7 @@ import at.reder.rpii2cmcp.model.I2CCommand;
 import at.reder.rpii2cmcp.model.I2CResponse;
 import at.reder.rpii2cmcp.service.I2CService;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.mockito.InjectMock;
+import io.quarkus.test.InjectMock;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.Test;
 
