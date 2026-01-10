@@ -1,32 +1,51 @@
-# RPI I2C MCP Server
+# rpii2cmcp
 
-A Model Context Protocol (MCP) Server built with Quarkus that enables execution of I2C commands on Raspberry Pi 5+ microcomputers. This server provides a secure REST API for reading from and writing to I2C devices using i2c-tools.
+MCP (Model Context Protocol) Server for Raspberry Pi 5+ to execute I2C commands.
+
+## Overview
+
+rpii2cmcp is a Quarkus-based MCP server designed to run on Raspberry Pi 5+ microcomputers. It provides a secure and efficient interface for executing I2C (Inter-Integrated Circuit) commands through the i2c-tools suite, enabling remote control and interaction with I2C devices connected to your Raspberry Pi.
 
 ## Features
 
-- ✅ **Quarkus-based**: Modern, reactive Java framework optimized for cloud and containerization
-- ✅ **I2C Command Support**: Execute read and write operations on I2C devices
-- ✅ **Security First**: Input validation, command sanitization, and configurable access controls
-- ✅ **RESTful API**: Clean REST endpoints with JSON request/response
-- ✅ **OpenAPI/Swagger**: Built-in API documentation and testing interface
-- ✅ **Health Checks**: Built-in health monitoring endpoints
-- ✅ **High Test Coverage**: 80%+ code and branch coverage
-- ✅ **Complete Documentation**: Comprehensive Javadoc for all public APIs
-- ✅ **Easy Installation**: Automated installation and startup scripts
-- ✅ **Systemd Integration**: Run as a system service with auto-restart
+- **MCP Server Implementation**: Built with Quarkus for high performance and low resource consumption
+- **I2C Command Execution**: Execute I2C commands using the standard i2c-tools suite
+- **Secure Design**: Implements security best practices to protect against unauthorized access
+- **Well-Tested**: 80% code and branch coverage to ensure reliability
+- **Comprehensive Documentation**: Full Javadoc documentation for all public APIs
+- **Easy Installation**: Automated installation and startup scripts for Raspberry Pi 5+
+- **Monitoring & Logging**: Built-in logging and monitoring capabilities
 
-## Prerequisites
+## Requirements
 
-- Raspberry Pi 5+ (or compatible single-board computer with I2C support)
-- Raspberry Pi OS (64-bit recommended)
-- Java 17 or higher
-- Maven 3.8+
+### Hardware
+- Raspberry Pi 5 or newer
+- I2C devices connected to the GPIO pins
+
+### Software
+- Java 17 or newer
 - i2c-tools package
-- Enabled I2C interface
+- Maven or Gradle (for building from source)
 
-## Quick Start
+## Installation
 
-### Installation
+### Prerequisites
+
+First, ensure i2c-tools is installed on your Raspberry Pi:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y i2c-tools
+```
+
+Enable I2C on your Raspberry Pi:
+
+```bash
+sudo raspi-config
+# Navigate to: Interface Options -> I2C -> Enable
+```
+
+### Using the Installation Script
 
 1. Clone the repository:
 ```bash
@@ -34,263 +53,300 @@ git clone https://github.com/wolfgangreder/rpii2cmcp.git
 cd rpii2cmcp
 ```
 
-2. Run the installation script (requires sudo):
+2. Run the installation script:
 ```bash
-sudo ./scripts/install.sh
+chmod +x install.sh
+sudo ./install.sh
 ```
 
-The installation script will:
-- Update system packages
-- Install i2c-tools
-- Enable I2C interface
-- Configure permissions
-- Install Java 17 and Maven (if needed)
+This will:
+- Install all necessary dependencies
 - Build the application
-- Create a systemd service
+- Configure the service
+- Set up automatic startup
 
-3. Reboot if I2C was just enabled:
+### Manual Installation
+
+1. Clone the repository and build:
 ```bash
-sudo reboot
+git clone https://github.com/wolfgangreder/rpii2cmcp.git
+cd rpii2cmcp
+./mvnw clean package
 ```
 
-### Running the Server
-
-#### Option 1: Using the startup script (Development mode)
+2. Install the compiled application:
 ```bash
-./scripts/start.sh dev
+sudo cp target/rpii2cmcp-runner /usr/local/bin/
+sudo chmod +x /usr/local/bin/rpii2cmcp-runner
 ```
 
-#### Option 2: Using the startup script (Production mode)
+3. Configure as a systemd service (optional):
 ```bash
-./scripts/start.sh prod
-```
-
-#### Option 3: Using systemd service
-```bash
-# Start the service
-sudo systemctl start rpii2cmcp
-
-# Enable auto-start on boot
+sudo cp scripts/rpii2cmcp.service /etc/systemd/system/
+sudo systemctl daemon-reload
 sudo systemctl enable rpii2cmcp
-
-# Check status
-sudo systemctl status rpii2cmcp
-
-# View logs
-sudo journalctl -u rpii2cmcp -f
+sudo systemctl start rpii2cmcp
 ```
 
-## API Usage
+## Configuration
 
-### Execute I2C Command
+Configuration is managed through `application.properties` or environment variables.
 
-**Endpoint:** `POST /api/i2c/execute`
+### Basic Configuration
 
-**Request Body:**
-```json
-{
-  "bus": 1,
-  "address": "0x48",
-  "register": "0x00",
-  "operation": "read"
-}
+```properties
+# Server configuration
+quarkus.http.port=8080
+quarkus.http.host=0.0.0.0
+
+# I2C configuration
+i2c.default-bus=1
+i2c.timeout=1000
+
+# Security configuration
+quarkus.security.enabled=true
 ```
 
-**Response:**
-```json
-{
-  "success": true,
-  "data": "0x42",
-  "error": null,
-  "command": "i2cget -y 1 0x48 0x00"
-}
+### Environment Variables
+
+- `RPII2CMCP_PORT`: HTTP server port (default: 8080)
+- `I2C_BUS`: Default I2C bus number (default: 1)
+- `I2C_TIMEOUT`: Command timeout in milliseconds (default: 1000)
+
+## Usage
+
+### Starting the Server
+
+#### Using the startup script:
+```bash
+./startup.sh
 ```
 
-### Read Example
+#### Using systemd:
+```bash
+sudo systemctl start rpii2cmcp
+```
 
-Read from I2C device at address 0x48, register 0x00 on bus 1:
+#### Running directly:
+```bash
+java -jar target/rpii2cmcp-runner.jar
+```
+
+### API Examples
+
+#### Detecting I2C Devices
 
 ```bash
-curl -X POST http://localhost:8080/api/i2c/execute \
+curl -X GET http://localhost:8080/api/i2c/detect?bus=1
+```
+
+#### Reading from an I2C Device
+
+```bash
+curl -X POST http://localhost:8080/api/i2c/read \
   -H "Content-Type: application/json" \
   -d '{
     "bus": 1,
     "address": "0x48",
     "register": "0x00",
-    "operation": "read"
+    "length": 2
   }'
 ```
 
-### Write Example
-
-Write value 0xFF to register 0x01 of device at address 0x48 on bus 1:
+#### Writing to an I2C Device
 
 ```bash
-curl -X POST http://localhost:8080/api/i2c/execute \
+curl -X POST http://localhost:8080/api/i2c/write \
   -H "Content-Type: application/json" \
   -d '{
     "bus": 1,
     "address": "0x48",
-    "register": "0x01",
-    "value": "0xFF",
-    "operation": "write"
+    "register": "0x00",
+    "data": [0x01, 0x02]
   }'
 ```
 
-## API Documentation
+### MCP Protocol
 
-Once the server is running, access the interactive API documentation:
+The server implements the Model Context Protocol, allowing AI models and assistants to interact with I2C devices through a standardized interface.
 
-- **Swagger UI**: http://localhost:8080/swagger-ui
-- **OpenAPI Spec**: http://localhost:8080/openapi
-- **Health Check**: http://localhost:8080/q/health
-
-## Configuration
-
-Edit `src/main/resources/application.yml` to customize settings:
-
-```yaml
-quarkus:
-  http:
-    port: 8080  # Change server port
-
-i2c:
-  enabled: true  # Enable/disable I2C commands
-  command:
-    get: /usr/sbin/i2cget  # Path to i2cget
-    set: /usr/sbin/i2cset  # Path to i2cset
+Example MCP request:
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "i2c/execute",
+  "params": {
+    "command": "i2cget",
+    "args": ["-y", "1", "0x48", "0x00"]
+  },
+  "id": 1
+}
 ```
-
-## Security
-
-The server implements multiple security measures:
-
-1. **Input Validation**: All parameters are validated before execution
-   - Bus numbers restricted to 0-10
-   - Address and register values must be valid hex format (0xNN)
-   - Operation must be "read" or "write"
-   
-2. **Command Sanitization**: Commands are built programmatically, not via string concatenation
-3. **No Shell Injection**: Direct process execution without shell interpretation
-4. **Configurable Access**: Can be disabled via configuration
-5. **Error Handling**: Comprehensive error messages without exposing internals
 
 ## Development
 
-### Building
+### Building from Source
 
 ```bash
-mvn clean package
+# Using Maven
+./mvnw clean package
+
+# Using Gradle
+./gradlew build
 ```
 
 ### Running Tests
 
 ```bash
-mvn test
+# Run all tests
+./mvnw test
+
+# Run with coverage report
+./mvnw verify
+
+# View coverage report
+open target/site/jacoco/index.html
 ```
 
-### Test Coverage
+### Development Mode
+
+Run in development mode with hot reload:
 
 ```bash
-mvn clean test jacoco:report
+./mvnw quarkus:dev
 ```
-
-View coverage report: `target/site/jacoco/index.html`
 
 ### Generating Javadoc
 
 ```bash
-mvn javadoc:javadoc
+./mvnw javadoc:javadoc
+# Documentation will be in target/site/apidocs/
 ```
 
-View Javadoc: `target/site/apidocs/index.html`
+## Architecture
 
-### Development Mode with Live Reload
+### Components
 
-```bash
-mvn quarkus:dev
-```
+- **MCP Server**: Quarkus-based REST API implementing the MCP protocol
+- **I2C Service**: Wrapper around i2c-tools for executing I2C commands
+- **Security Layer**: Authentication and authorization for API access
+- **Command Validator**: Validates I2C commands before execution
+- **Error Handler**: Comprehensive error handling and logging
 
-## I2C Device Detection
+### Security
 
-To detect I2C devices on your Raspberry Pi:
-
-```bash
-# Detect devices on bus 1
-sudo i2cdetect -y 1
-
-# List available I2C buses
-sudo i2cdetect -l
-```
+- Input validation for all I2C commands
+- Rate limiting to prevent abuse
+- Authentication required for all API endpoints
+- Audit logging of all I2C operations
+- Restricted execution permissions
 
 ## Troubleshooting
 
-### I2C Device Not Found
+### Common Issues
 
-1. Check if I2C is enabled:
-```bash
-ls /dev/i2c-*
-```
+#### I2C Device Not Detected
 
-2. Enable I2C interface:
+1. Verify I2C is enabled:
 ```bash
 sudo raspi-config
-# Navigate to: Interface Options > I2C > Enable
 ```
 
-3. Load I2C kernel module:
+2. Check for connected devices:
 ```bash
-sudo modprobe i2c-dev
+sudo i2cdetect -y 1
 ```
 
-### Permission Denied
-
-Add your user to the i2c group:
+3. Verify permissions:
 ```bash
-sudo usermod -a -G i2c $USER
+sudo usermod -aG i2c $USER
+# Log out and back in for changes to take effect
 ```
 
-Log out and log back in for changes to take effect.
+#### Permission Denied Errors
 
-### Service Won't Start
+Ensure the user running the service has I2C permissions:
+```bash
+sudo usermod -aG i2c rpii2cmcp
+```
 
-Check logs:
+#### Server Won't Start
+
+Check the logs:
 ```bash
 sudo journalctl -u rpii2cmcp -n 50
 ```
 
-## Project Structure
-
-```
-rpii2cmcp/
-├── src/
-│   ├── main/
-│   │   ├── java/at/reder/rpii2cmcp/
-│   │   │   ├── model/          # Data models
-│   │   │   ├── resource/       # REST endpoints
-│   │   │   └── service/        # Business logic
-│   │   └── resources/
-│   │       └── application.yml # Configuration
-│   └── test/
-│       └── java/at/reder/rpii2cmcp/  # Unit tests
-├── scripts/
-│   ├── install.sh              # Installation script
-│   └── start.sh                # Startup script
-└── pom.xml                     # Maven configuration
+Verify Java version:
+```bash
+java -version
 ```
 
-## License
+### Logs
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Application logs are located at:
+- Systemd: `journalctl -u rpii2cmcp`
+- Direct run: Console output or configured log file
+
+## Testing
+
+The project maintains 80% test coverage across:
+- Unit tests for all service components
+- Integration tests for I2C command execution
+- Security tests for authentication and authorization
+- End-to-end API tests
+
+Run tests with coverage:
+```bash
+./mvnw clean verify
+```
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please follow these guidelines:
 
-## Author
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-Wolfgang Reder
+### Code Standards
+
+- Follow Java coding conventions
+- Maintain 80% test coverage
+- Add Javadoc for all public APIs
+- Update documentation for new features
+
+## License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+## API Reference
+
+For detailed API documentation, see the Javadoc documentation:
+```bash
+./mvnw javadoc:javadoc
+open target/site/apidocs/index.html
+```
 
 ## Support
 
-For issues and questions, please use the GitHub issue tracker.
+For issues, questions, or contributions, please:
+- Open an issue on GitHub
+- Check existing documentation
+- Review the troubleshooting section
+
+## Acknowledgments
+
+- Built with [Quarkus](https://quarkus.io/)
+- Uses [i2c-tools](https://www.kernel.org/doc/Documentation/i2c/tools/i2c-tools)
+- Implements the [Model Context Protocol](https://modelcontextprotocol.io/)
+
+## Roadmap
+
+- [ ] Support for additional I2C protocols
+- [ ] Web-based management interface
+- [ ] Docker container support
+- [ ] Multiple device profiles
+- [ ] Enhanced monitoring and metrics
