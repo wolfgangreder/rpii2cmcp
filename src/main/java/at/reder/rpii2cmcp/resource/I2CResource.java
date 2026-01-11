@@ -41,8 +41,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 
 /**
- * MCP Server resource for I2C command execution.
- * Provides tools for executing I2C read and write operations via MCP protocol.
+ * MCP Server resource for I2C command execution. Provides tools for executing I2C read and write operations via MCP
+ * protocol.
  *
  * @author Wolfgang Reder
  * @version 1.0.0
@@ -75,7 +75,8 @@ public class I2CResource {
             content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = McpTool.class)))
   })
-  public List<McpTool> getTools() {
+  public List<McpTool> getTools()
+  {
     LOG.info("Listing available MCP tools");
     return List.of(createI2cgetTool(), createI2csetTool());
   }
@@ -99,15 +100,19 @@ public class I2CResource {
   })
   public McpToolResult callTool(
           @RequestBody(description = "MCP tool call request", required = true,
-                  content = @Content(schema = @Schema(implementation = McpToolCall.class))) McpToolCall toolCall) {
+                  content = @Content(schema = @Schema(implementation = McpToolCall.class))) McpToolCall toolCall)
+  {
 
     LOG.infof("Received MCP tool call: name=%s", toolCall.getName());
 
     try {
       return switch (toolCall.getName()) {
-        case TOOL_I2CGET -> executeI2cget(toolCall.getArguments());
-        case TOOL_I2CSET -> executeI2cset(toolCall.getArguments());
-        default -> McpToolResult.error("Unknown tool: " + toolCall.getName());
+        case TOOL_I2CGET ->
+          executeI2cget(toolCall.getArguments());
+        case TOOL_I2CSET ->
+          executeI2cset(toolCall.getArguments());
+        default ->
+          McpToolResult.error("Unknown tool: " + toolCall.getName());
       };
     } catch (IllegalArgumentException e) {
       LOG.error("Invalid tool call", e);
@@ -118,12 +123,14 @@ public class I2CResource {
     }
   }
 
-  private McpToolResult executeI2cget(Map<String, Object> arguments) {
+  private McpToolResult executeI2cget(Map<String, Object> arguments)
+  {
     int bus = getIntArgument(arguments, "bus");
     String address = getStringArgument(arguments, "address");
     String register = getStringArgument(arguments, "register");
+    String mode = getOptionalStringArgument(arguments, "mode");
 
-    I2CCommand command = new I2CCommand(bus, address, register, null, "read");
+    I2CCommand command = new I2CCommand(bus, address, register, null, "read", mode);
     I2CResponse response = i2cService.executeCommand(command);
 
     if (response.isSuccess()) {
@@ -133,13 +140,15 @@ public class I2CResource {
     }
   }
 
-  private McpToolResult executeI2cset(Map<String, Object> arguments) {
+  private McpToolResult executeI2cset(Map<String, Object> arguments)
+  {
     int bus = getIntArgument(arguments, "bus");
     String address = getStringArgument(arguments, "address");
     String register = getStringArgument(arguments, "register");
     String value = getStringArgument(arguments, "value");
+    String mode = getOptionalStringArgument(arguments, "mode");
 
-    I2CCommand command = new I2CCommand(bus, address, register, value, "write");
+    I2CCommand command = new I2CCommand(bus, address, register, value, "write", mode);
     I2CResponse response = i2cService.executeCommand(command);
 
     if (response.isSuccess()) {
@@ -149,7 +158,8 @@ public class I2CResource {
     }
   }
 
-  private int getIntArgument(Map<String, Object> arguments, String name) {
+  private int getIntArgument(Map<String, Object> arguments, String name)
+  {
     Object value = arguments.get(name);
     if (value == null) {
       throw new IllegalArgumentException("Missing required argument: " + name);
@@ -160,7 +170,8 @@ public class I2CResource {
     return Integer.parseInt(value.toString());
   }
 
-  private String getStringArgument(Map<String, Object> arguments, String name) {
+  private String getStringArgument(Map<String, Object> arguments, String name)
+  {
     Object value = arguments.get(name);
     if (value == null) {
       throw new IllegalArgumentException("Missing required argument: " + name);
@@ -168,23 +179,38 @@ public class I2CResource {
     return value.toString();
   }
 
-  private McpTool createI2cgetTool() {
+  private String getOptionalStringArgument(Map<String, Object> arguments, String name)
+  {
+    Object value = arguments.get(name);
+    if (value == null) {
+      return null;
+    }
+    return value.toString();
+  }
+
+  private McpTool createI2cgetTool()
+  {
     Map<String, Object> schema = new LinkedHashMap<>();
     schema.put("type", "object");
 
     Map<String, Object> properties = new LinkedHashMap<>();
     properties.put("bus", Map.of(
-            "type", "integer",
-            "description", "I2C bus number (typically 0 or 1 on Raspberry Pi)"
-    ));
+                   "type", "integer",
+                   "description", "I2C bus number (typically 0 or 1 on Raspberry Pi)"
+           ));
     properties.put("address", Map.of(
-            "type", "string",
-            "description", "I2C device address in hex format (e.g., 0x48)"
-    ));
+                   "type", "string",
+                   "description", "I2C device address in hex format (e.g., 0x48)"
+           ));
     properties.put("register", Map.of(
-            "type", "string",
-            "description", "Register address to read from in hex format (e.g., 0x00)"
-    ));
+                   "type", "string",
+                   "description", "Register address to read from in hex format (e.g., 0x00)"
+           ));
+    properties.put("mode", Map.of(
+                   "type", "string",
+                   "description",
+                   "Data Mode: b for one byte (default can be omitted), w for word and i <number> for reading/writing <number> bytes (e.g. i 4 for 32bit double word)"
+           ));
     schema.put("properties", properties);
     schema.put("required", List.of("bus", "address", "register"));
 
@@ -195,27 +221,28 @@ public class I2CResource {
     );
   }
 
-  private McpTool createI2csetTool() {
+  private McpTool createI2csetTool()
+  {
     Map<String, Object> schema = new LinkedHashMap<>();
     schema.put("type", "object");
 
     Map<String, Object> properties = new LinkedHashMap<>();
     properties.put("bus", Map.of(
-            "type", "integer",
-            "description", "I2C bus number (typically 0 or 1 on Raspberry Pi)"
-    ));
+                   "type", "integer",
+                   "description", "I2C bus number (typically 0 or 1 on Raspberry Pi)"
+           ));
     properties.put("address", Map.of(
-            "type", "string",
-            "description", "I2C device address in hex format (e.g., 0x48)"
-    ));
+                   "type", "string",
+                   "description", "I2C device address in hex format (e.g., 0x48)"
+           ));
     properties.put("register", Map.of(
-            "type", "string",
-            "description", "Register address to write to in hex format (e.g., 0x00)"
-    ));
+                   "type", "string",
+                   "description", "Register address to write to in hex format (e.g., 0x00)"
+           ));
     properties.put("value", Map.of(
-            "type", "string",
-            "description", "Value to write in hex format (e.g., 0xFF)"
-    ));
+                   "type", "string",
+                   "description", "Value to write in hex format (e.g., 0xFF)"
+           ));
     schema.put("properties", properties);
     schema.put("required", List.of("bus", "address", "register", "value"));
 

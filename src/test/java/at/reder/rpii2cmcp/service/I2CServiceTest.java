@@ -310,4 +310,139 @@ class I2CServiceTest {
     String result = service.readProcessOutput(mockProcess);
     assertEquals("line1\nline2\nline3\n", result);
   }
+
+  // Mode validation tests
+
+  @Test
+  void testValidateCommandWithByteMode()
+  {
+    I2CCommand cmd = new I2CCommand(1, "0x48", "0x00", null, "read", "b");
+    assertDoesNotThrow(() -> service.validateCommand(cmd));
+  }
+
+  @Test
+  void testValidateCommandWithWordMode()
+  {
+    I2CCommand cmd = new I2CCommand(1, "0x48", "0x00", null, "read", "w");
+    assertDoesNotThrow(() -> service.validateCommand(cmd));
+  }
+
+  @Test
+  void testValidateCommandWithBlockMode()
+  {
+    I2CCommand cmd = new I2CCommand(1, "0x48", "0x00", null, "read", "i 4");
+    assertDoesNotThrow(() -> service.validateCommand(cmd));
+  }
+
+  @Test
+  void testValidateCommandWithBlockModeNoSpace()
+  {
+    I2CCommand cmd = new I2CCommand(1, "0x48", "0x00", null, "read", "i4");
+    assertDoesNotThrow(() -> service.validateCommand(cmd));
+  }
+
+  @Test
+  void testValidateCommandWithBlockModeMinValue()
+  {
+    I2CCommand cmd = new I2CCommand(1, "0x48", "0x00", null, "read", "i1");
+    assertDoesNotThrow(() -> service.validateCommand(cmd));
+  }
+
+  @Test
+  void testValidateCommandWithBlockModeMaxValue()
+  {
+    I2CCommand cmd = new I2CCommand(1, "0x48", "0x00", null, "read", "i 32");
+    assertDoesNotThrow(() -> service.validateCommand(cmd));
+  }
+
+  @Test
+  void testValidateCommandWithNullMode()
+  {
+    I2CCommand cmd = new I2CCommand(1, "0x48", "0x00", null, "read", null);
+    assertDoesNotThrow(() -> service.validateCommand(cmd));
+  }
+
+  @Test
+  void testValidateCommandWithEmptyMode()
+  {
+    I2CCommand cmd = new I2CCommand(1, "0x48", "0x00", null, "read", "");
+    assertDoesNotThrow(() -> service.validateCommand(cmd));
+  }
+
+  @Test
+  void testValidateCommandWithBlankMode()
+  {
+    I2CCommand cmd = new I2CCommand(1, "0x48", "0x00", null, "read", "   ");
+    assertDoesNotThrow(() -> service.validateCommand(cmd));
+  }
+
+  @Test
+  void testValidateCommandWithInvalidMode()
+  {
+    I2CCommand cmd = new I2CCommand(1, "0x48", "0x00", null, "read", "x");
+    assertThrows(IllegalArgumentException.class, () -> service.validateCommand(cmd));
+  }
+
+  @Test
+  void testValidateCommandWithInvalidBlockModeZero()
+  {
+    I2CCommand cmd = new I2CCommand(1, "0x48", "0x00", null, "read", "i 0");
+    assertThrows(IllegalArgumentException.class, () -> service.validateCommand(cmd));
+  }
+
+  @Test
+  void testValidateCommandWithInvalidBlockModeTooHigh()
+  {
+    I2CCommand cmd = new I2CCommand(1, "0x48", "0x00", null, "read", "i 33");
+    assertThrows(IllegalArgumentException.class, () -> service.validateCommand(cmd));
+  }
+
+  @Test
+  void testValidateCommandWithInvalidBlockModeNegative()
+  {
+    I2CCommand cmd = new I2CCommand(1, "0x48", "0x00", null, "read", "i -1");
+    assertThrows(IllegalArgumentException.class, () -> service.validateCommand(cmd));
+  }
+
+  @Test
+  void testValidateCommandWithInvalidBlockModeNoNumber()
+  {
+    I2CCommand cmd = new I2CCommand(1, "0x48", "0x00", null, "read", "i");
+    assertThrows(IllegalArgumentException.class, () -> service.validateCommand(cmd));
+  }
+
+  @Test
+  @EnabledOnOs(OS.LINUX)
+  void testExecuteReadCommandWithMode()
+  {
+    service.i2cgetPath = "/bin/echo";
+    I2CCommand cmd = new I2CCommand(1, "0x48", "0x00", null, "read", "w");
+
+    I2CResponse response = service.executeCommand(cmd);
+
+    assertTrue(response.isSuccess());
+    assertNotNull(response.getData());
+    assertTrue(response.getCommand().contains("w"));
+  }
+
+  @Test
+  @EnabledOnOs(OS.LINUX)
+  void testExecuteReadCommandWithBlockMode()
+  {
+    service.i2cgetPath = "/bin/echo";
+    I2CCommand cmd = new I2CCommand(1, "0x48", "0x00", null, "read", "i 4");
+
+    I2CResponse response = service.executeCommand(cmd);
+
+    assertTrue(response.isSuccess());
+    assertNotNull(response.getData());
+    assertTrue(response.getCommand().contains("i 4"));
+  }
+
+  @Test
+  void testValidateCommandWithWriteAndMode()
+  {
+    I2CCommand cmd = new I2CCommand(1, "0x48", "0x00", "0xFF", "write", "w");
+    assertDoesNotThrow(() -> service.validateCommand(cmd));
+  }
 }

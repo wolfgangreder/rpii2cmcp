@@ -185,6 +185,98 @@ curl -X POST http://localhost:8080/api/i2c/write \
 
 The server implements the Model Context Protocol, allowing AI models and assistants to interact with I2C devices through a standardized interface.
 
+#### MCP Tool Endpoints
+
+**List available tools:**
+```bash
+curl -X GET http://localhost:8080/tools/list
+```
+
+**Execute a tool call:**
+```bash
+# Read a byte from I2C device
+curl -X POST http://localhost:8080/tools/call \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "i2cget",
+    "arguments": {
+      "bus": 1,
+      "address": "0x48",
+      "register": "0x00"
+    }
+  }'
+
+# Read a word (2 bytes) from I2C device
+curl -X POST http://localhost:8080/tools/call \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "i2cget",
+    "arguments": {
+      "bus": 1,
+      "address": "0x48",
+      "register": "0x00",
+      "mode": "w"
+    }
+  }'
+
+# Read multiple bytes (block read) from I2C device
+curl -X POST http://localhost:8080/tools/call \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "i2cget",
+    "arguments": {
+      "bus": 1,
+      "address": "0x48",
+      "register": "0x00",
+      "mode": "i 4"
+    }
+  }'
+
+# Write a byte to I2C device
+curl -X POST http://localhost:8080/tools/call \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "i2cset",
+    "arguments": {
+      "bus": 1,
+      "address": "0x48",
+      "register": "0x00",
+      "value": "0xFF"
+    }
+  }'
+```
+
+#### Data Mode Parameter
+
+The `mode` parameter controls how data is read/written:
+- `b` - Byte mode (default, reads/writes 1 byte)
+- `w` - Word mode (reads/writes 2 bytes)
+- `i N` - Block mode (reads/writes N bytes, where N is 1-32)
+
+#### Copilot MCP Server Scanning
+
+For GitHub Copilot integration, alternative endpoints are available under `/api/scan`:
+
+```bash
+# Get server info
+curl -X GET http://localhost:8080/api/scan/info
+
+# List available tools  
+curl -X GET http://localhost:8080/api/scan/tools
+
+# Execute tool (same body format as /tools/call)
+curl -X POST http://localhost:8080/api/scan/tools \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "i2cget",
+    "arguments": {
+      "bus": 1,
+      "address": "0x48",
+      "register": "0x00"
+    }
+  }'
+```
+
 Example MCP request:
 ```json
 {

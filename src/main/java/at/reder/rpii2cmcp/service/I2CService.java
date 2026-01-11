@@ -45,6 +45,12 @@ public class I2CService {
   private static final Pattern HEX_PATTERN = Pattern.compile("^0[xX][0-9A-Fa-f]+$");
 
   /**
+   * Pattern for validating data mode parameter.
+   * Valid modes: "b" (byte), "w" (word), "i" followed by optional space and number 1-32 (block).
+   */
+  private static final Pattern MODE_PATTERN = Pattern.compile("^([bw]|i\\s*([1-9]|[12][0-9]|3[0-2]))$");
+
+  /**
    * Maximum allowed I2C bus number for security.
    */
   private static final int MAX_BUS_NUMBER = 10;
@@ -144,6 +150,14 @@ public class I2CService {
         throw new IllegalArgumentException("Invalid value format: " + command.getValue());
       }
     }
+
+    // Validate mode if provided
+    if (command.getMode() != null && !command.getMode().isBlank()) {
+      if (!MODE_PATTERN.matcher(command.getMode()).matches()) {
+        throw new IllegalArgumentException("Invalid mode format: " + command.getMode()
+                + ". Valid modes are: 'b' (byte), 'w' (word), or 'i' followed by a number 1-32 (e.g., 'i 4')");
+      }
+    }
   }
 
   /**
@@ -162,7 +176,9 @@ public class I2CService {
     cmdList.add(String.valueOf(command.getBus()));
     cmdList.add(command.getAddress());
     cmdList.add(command.getRegister());
-
+    if (command.getMode() != null && !command.getMode().isBlank()) {
+      cmdList.add(command.getMode());
+    }
     String cmdString = String.join(" ", cmdList);
     LOG.infof("Executing read command: %s", cmdString);
 

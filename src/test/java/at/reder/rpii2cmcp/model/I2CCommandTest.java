@@ -32,7 +32,7 @@ class I2CCommandTest {
     }
 
     @Test
-    void testParameterizedConstructor() {
+    void testParameterizedConstructorWithoutMode() {
         I2CCommand command = new I2CCommand(1, "0x48", "0x00", "0xFF", "write");
         
         assertEquals(1, command.getBus());
@@ -40,6 +40,19 @@ class I2CCommandTest {
         assertEquals("0x00", command.getRegister());
         assertEquals("0xFF", command.getValue());
         assertEquals("write", command.getOperation());
+        assertNull(command.getMode());
+    }
+
+    @Test
+    void testParameterizedConstructorWithMode() {
+        I2CCommand command = new I2CCommand(1, "0x48", "0x00", "0xFF", "write", "w");
+        
+        assertEquals(1, command.getBus());
+        assertEquals("0x48", command.getAddress());
+        assertEquals("0x00", command.getRegister());
+        assertEquals("0xFF", command.getValue());
+        assertEquals("write", command.getOperation());
+        assertEquals("w", command.getMode());
     }
 
     @Test
@@ -51,12 +64,14 @@ class I2CCommandTest {
         command.setRegister("0x10");
         command.setValue("0xAA");
         command.setOperation("read");
+        command.setMode("b");
         
         assertEquals(2, command.getBus());
         assertEquals("0x50", command.getAddress());
         assertEquals("0x10", command.getRegister());
         assertEquals("0xAA", command.getValue());
         assertEquals("read", command.getOperation());
+        assertEquals("b", command.getMode());
     }
 
     @Test
@@ -67,11 +82,13 @@ class I2CCommandTest {
         command.setRegister(null);
         command.setValue(null);
         command.setOperation(null);
+        command.setMode(null);
         
         assertNull(command.getAddress());
         assertNull(command.getRegister());
         assertNull(command.getValue());
         assertNull(command.getOperation());
+        assertNull(command.getMode());
     }
 
     @Test
@@ -83,5 +100,36 @@ class I2CCommandTest {
         assertEquals("0x00", command.getRegister());
         assertNull(command.getValue());
         assertEquals("read", command.getOperation());
+        assertNull(command.getMode());
+    }
+
+    @Test
+    void testReadCommandWithMode() {
+        I2CCommand command = new I2CCommand(1, "0x48", "0x00", null, "read", "i 4");
+        
+        assertEquals(1, command.getBus());
+        assertEquals("0x48", command.getAddress());
+        assertEquals("0x00", command.getRegister());
+        assertNull(command.getValue());
+        assertEquals("read", command.getOperation());
+        assertEquals("i 4", command.getMode());
+    }
+
+    @Test
+    void testWordMode() {
+        I2CCommand command = new I2CCommand(1, "0x48", "0x00", null, "read", "w");
+        assertEquals("w", command.getMode());
+    }
+
+    @Test
+    void testByteMode() {
+        I2CCommand command = new I2CCommand(1, "0x48", "0x00", null, "read", "b");
+        assertEquals("b", command.getMode());
+    }
+
+    @Test
+    void testBlockMode() {
+        I2CCommand command = new I2CCommand(1, "0x48", "0x00", null, "read", "i 32");
+        assertEquals("i 32", command.getMode());
     }
 }
