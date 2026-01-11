@@ -30,10 +30,10 @@ if ! command -v java &> /dev/null; then
     exit 1
 fi
 
-# Check if Maven is installed (for dev mode)
-if [ "$MODE" = "dev" ] && ! command -v mvn &> /dev/null; then
-    echo "Error: Maven is not installed"
-    echo "Please run the installation script first: sudo ./scripts/install.sh"
+# Check if Gradle wrapper exists (for dev mode)
+if [ "$MODE" = "dev" ] && [ ! -f "$PROJECT_DIR/gradlew" ]; then
+    echo "Error: Gradle wrapper not found"
+    echo "Please ensure gradlew exists in the project directory"
     exit 1
 fi
 
@@ -43,23 +43,23 @@ if [ "$MODE" = "dev" ]; then
     echo "Press Ctrl+C to stop"
     echo ""
     
-    mvn quarkus:dev
+    ./gradlew quarkusDev
     
 elif [ "$MODE" = "prod" ]; then
     echo "Starting in PRODUCTION mode..."
     echo ""
     
     # Check if the application is built
-    if [ ! -f "$PROJECT_DIR/target/quarkus-app/quarkus-run.jar" ]; then
+    if [ ! -f "$PROJECT_DIR/build/quarkus-app/quarkus-run.jar" ]; then
         echo "Application not built. Building now..."
-        mvn clean package -DskipTests
+        ./gradlew clean build -x test
     fi
     
     echo "Starting server..."
     echo "Press Ctrl+C to stop"
     echo ""
     
-    java -jar "$PROJECT_DIR/target/quarkus-app/quarkus-run.jar"
+    java -jar "$PROJECT_DIR/build/quarkus-app/quarkus-run.jar"
     
 else
     echo "Error: Invalid mode '$MODE'"

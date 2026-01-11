@@ -113,21 +113,12 @@ else
 fi
 
 echo ""
-echo "Step 7: Installing Maven (if not present)..."
-if ! command -v mvn &> /dev/null; then
-    apt-get install -y maven
-    echo "Maven installed"
-else
-    echo "Maven already installed"
-fi
-
-echo ""
-echo "Step 8: Building the application..."
+echo "Step 7: Building the application..."
 cd "$(dirname "$0")/.."
-sudo -u ${SUDO_USER:-$USER} mvn clean package -DskipTests
+sudo -u ${SUDO_USER:-$USER} ./gradlew clean build -x test
 
 echo ""
-echo "Step 9: Creating systemd service..."
+echo "Step 8: Creating systemd service..."
 cat > /etc/systemd/system/rpii2cmcp.service << EOF
 [Unit]
 Description=RPI I2C MCP Server
@@ -137,7 +128,7 @@ After=network.target
 Type=simple
 User=${SUDO_USER:-$USER}
 WorkingDirectory=$(pwd)
-ExecStart=/usr/bin/java -jar $(pwd)/target/quarkus-app/quarkus-run.jar
+ExecStart=/usr/bin/java -jar $(pwd)/build/quarkus-app/quarkus-run.jar
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal
@@ -151,7 +142,7 @@ systemctl daemon-reload
 echo "Systemd service created"
 
 echo ""
-echo "Step 10: Setting up firewall (if UFW is active)..."
+echo "Step 9: Setting up firewall (if UFW is active)..."
 if command -v ufw &> /dev/null && ufw status | grep -q "Status: active"; then
     ufw allow 8080/tcp
     echo "Firewall rule added for port 8080"
