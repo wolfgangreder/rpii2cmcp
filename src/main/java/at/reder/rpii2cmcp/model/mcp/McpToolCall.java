@@ -32,6 +32,16 @@ public class McpToolCall {
     @JsonProperty("arguments")
     private Map<String, Object> arguments;
 
+    @JsonProperty("tool")
+    public void setTool(String tool) {
+        this.name = tool;
+    }
+
+    @JsonProperty("input")
+    public void setInput(Map<String, Object> input) {
+        this.arguments = input;
+    }
+
     public McpToolCall() {
     }
 
