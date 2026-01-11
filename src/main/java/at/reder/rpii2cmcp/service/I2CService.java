@@ -203,7 +203,15 @@ public class I2CService {
     cmdList.add(String.valueOf(command.getBus()));
     cmdList.add(command.getAddress());
     cmdList.add(command.getRegister());
-    cmdList.add(command.getValue());
+    if (command.getValue().length() > 6) {
+      cmdList.add(command.getValue());
+      cmdList.add("i");
+    } else if (command.getValue().length() > 4) {
+      cmdList.add(command.getValue());
+      cmdList.add("w");
+    } else {
+      cmdList.add(command.getValue());
+    }
 
     String cmdString = String.join(" ", cmdList);
     LOG.infof("Executing write command: %s", cmdString);
