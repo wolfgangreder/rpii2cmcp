@@ -20,7 +20,7 @@ quarkus:
   smallrye-openapi:
     path: /openapi
     info-title: RPI I2C MCP Server API
-    info-version: 1.0.1-SNAPSHOT
+    info-version: 1.0.1
     info-description: MCP Server for executing i2c commands on Raspberry Pi 5
   swagger-ui:
     always-include: true

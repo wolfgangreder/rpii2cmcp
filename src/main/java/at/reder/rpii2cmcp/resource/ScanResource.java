@@ -124,7 +124,7 @@ public class ScanResource {
   public static class ServerInfo {
 
     private final String name = "rpii2cmcp";
-    private final String version = "1.0.1-SNAPSHOT";
+    private final String version = "1.0.1";
     private final String description = "MCP Server for executing I2C commands on Raspberry Pi 5+";
     private final String protocol = "mcp";
 
