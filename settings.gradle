@@ -1,0 +1,12 @@
+pluginManagement {
+    def quarkusPluginVersion = settings.ext.find('quarkusPluginVersion') ?: '3.30.6'
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    plugins {
+        id 'io.quarkus' version quarkusPluginVersion
+    }
+}
+
+rootProject.name = 'rpii2cmcp'
