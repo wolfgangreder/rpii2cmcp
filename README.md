@@ -23,9 +23,9 @@ rpii2cmcp is a Quarkus-based MCP server designed to run on Raspberry Pi 5+ micro
 - I2C devices connected to the GPIO pins
 
 ### Software
-- Java 17 or newer
+- Java 21 or newer (Java 17 minimum)
 - i2c-tools package
-- Maven or Gradle (for building from source)
+- Gradle (included via wrapper)
 
 ## Installation
 
@@ -71,7 +71,7 @@ This will:
 ```bash
 git clone https://github.com/wolfgangreder/rpii2cmcp.git
 cd rpii2cmcp
-./mvnw clean package
+./gradlew clean build
 ```
 
 2. Install the compiled application:
@@ -119,7 +119,17 @@ quarkus.security.enabled=true
 
 #### Using the startup script:
 ```bash
-./startup.sh
+# Development mode
+./scripts/start.sh dev
+
+# Development mode with remote debugging (port 5005)
+./scripts/start.sh dev debug
+
+# Production mode
+./scripts/start.sh prod
+
+# Production mode with remote debugging (port 5005)
+./scripts/start.sh prod debug
 ```
 
 #### Using systemd:
@@ -129,7 +139,12 @@ sudo systemctl start rpii2cmcp
 
 #### Running directly:
 ```bash
-java -jar target/rpii2cmcp-runner.jar
+# Production mode
+java -jar build/quarkus-app/quarkus-run.jar
+
+# With remote debugging on port 5005
+java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 \
+     -jar build/quarkus-app/quarkus-run.jar
 ```
 
 ### API Examples
@@ -188,24 +203,24 @@ Example MCP request:
 ### Building from Source
 
 ```bash
-# Using Maven
-./mvnw clean package
+# Using Gradle wrapper
+./gradlew clean build
 
-# Using Gradle
-./gradlew build
+# Build without tests
+./gradlew clean build -x test
 ```
 
 ### Running Tests
 
 ```bash
 # Run all tests
-./mvnw test
+./gradlew test
 
 # Run with coverage report
-./mvnw verify
+./gradlew jacocoTestReport
 
 # View coverage report
-open target/site/jacoco/index.html
+open build/reports/jacoco/test/html/index.html
 ```
 
 ### Development Mode
@@ -213,14 +228,53 @@ open target/site/jacoco/index.html
 Run in development mode with hot reload:
 
 ```bash
-./mvnw quarkus:dev
+# Normal dev mode
+./gradlew quarkusDev
+
+# Dev mode with remote debugging on port 5005
+./gradlew quarkusDev -Ddebug=5005
+
+# Or use the helper script
+./scripts/start.sh dev debug
+```
+
+### Remote Debugging
+
+The server supports remote debugging on port 5005:
+
+**In development mode:**
+```bash
+./scripts/start.sh dev debug
+```
+
+**In production mode:**
+```bash
+./scripts/start.sh prod debug
+```
+
+**Connect your debugger to:** `<server-ip>:5005`
+
+**IntelliJ IDEA:** Run → Edit Configurations → Add New → Remote JVM Debug
+- Host: server IP
+- Port: 5005
+- Use module classpath: rpii2cmcp
+
+**VS Code:** Add to launch.json:
+```json
+{
+  "type": "java",
+  "name": "Remote Debug RPi",
+  "request": "attach",
+  "hostName": "<server-ip>",
+  "port": 5005
+}
 ```
 
 ### Generating Javadoc
 
 ```bash
-./mvnw javadoc:javadoc
-# Documentation will be in target/site/apidocs/
+./gradlew javadoc
+# Documentation will be in build/docs/javadoc/
 ```
 
 ## Architecture
@@ -298,7 +352,7 @@ The project maintains 80% test coverage across:
 
 Run tests with coverage:
 ```bash
-./mvnw clean verify
+./gradlew test jacocoTestReport
 ```
 
 ## Contributing
@@ -326,8 +380,8 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 For detailed API documentation, see the Javadoc documentation:
 ```bash
-./mvnw javadoc:javadoc
-open target/site/apidocs/index.html
+./gradlew javadoc
+open build/docs/javadoc/index.html
 ```
 
 ## Support

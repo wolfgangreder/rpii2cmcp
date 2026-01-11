@@ -49,7 +49,7 @@ if [ "$MODE" = "dev" ]; then
     
     if [ "$DEBUG" = "debug" ]; then
         echo "Remote debugging enabled on port 5005"
-        ./gradlew quarkusDev -Dquarkus.debug.enabled=true
+        ./gradlew quarkusDev -Ddebug=5005
     else
         ./gradlew quarkusDev
     fi
