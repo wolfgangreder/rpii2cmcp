@@ -42,7 +42,7 @@ public class I2CService {
   /**
    * Pattern for validating hexadecimal addresses.
    */
-  private static final Pattern HEX_PATTERN = Pattern.compile("^0[xX][0-9A-Fa-f]{1,2}$");
+  private static final Pattern HEX_PATTERN = Pattern.compile("^0[xX][0-9A-Fa-f]+$");
 
   /**
    * Maximum allowed I2C bus number for security.
