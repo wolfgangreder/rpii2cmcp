@@ -134,6 +134,10 @@ RestartSec=10
 StandardOutput=journal
 StandardError=journal
 
+# Uncomment the following line to enable remote debugging on port 5005
+# Environment="JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+# ExecStart=/usr/bin/java \$JAVA_OPTS -jar $(pwd)/build/quarkus-app/quarkus-run.jar
+
 [Install]
 WantedBy=multi-user.target
 EOF
@@ -145,7 +149,8 @@ echo ""
 echo "Step 9: Setting up firewall (if UFW is active)..."
 if command -v ufw &> /dev/null && ufw status | grep -q "Status: active"; then
     ufw allow 8080/tcp
-    echo "Firewall rule added for port 8080"
+    ufw allow 5005/tcp comment 'Java remote debugging'
+    echo "Firewall rules added for port 8080 (HTTP) and 5005 (debug)"
 else
     echo "UFW not active, skipping firewall setup"
 fi

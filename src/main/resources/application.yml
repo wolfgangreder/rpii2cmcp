@@ -9,6 +9,14 @@ quarkus:
     console:
       enable: true
       format: "%d{HH:mm:ss} %-5p [%c{2.}] (%t) %s%e%n"
+  
+  # Remote debugging configuration
+  # Enable with: -Dquarkus.debug.enabled=true
+  # Or set QUARKUS_DEBUG=true environment variable
+  debug:
+    enabled: false
+    host: 0.0.0.0
+    port: 5005
   smallrye-openapi:
     path: /openapi
     info-title: RPI I2C MCP Server API

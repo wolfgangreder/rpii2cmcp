@@ -14,11 +14,15 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 # Parse command line arguments
 MODE="${1:-dev}"
+DEBUG="${2:-false}"
 
 echo "=========================================="
 echo "RPI I2C MCP Server Startup Script"
 echo "=========================================="
 echo "Mode: $MODE"
+if [ "$DEBUG" = "debug" ]; then
+    echo "Debug: enabled on port 5005"
+fi
 echo ""
 
 cd "$PROJECT_DIR"
@@ -43,7 +47,12 @@ if [ "$MODE" = "dev" ]; then
     echo "Press Ctrl+C to stop"
     echo ""
     
-    ./gradlew quarkusDev
+    if [ "$DEBUG" = "debug" ]; then
+        echo "Remote debugging enabled on port 5005"
+        ./gradlew quarkusDev -Dquarkus.debug.enabled=true
+    else
+        ./gradlew quarkusDev
+    fi
     
 elif [ "$MODE" = "prod" ]; then
     echo "Starting in PRODUCTION mode..."
@@ -59,10 +68,19 @@ elif [ "$MODE" = "prod" ]; then
     echo "Press Ctrl+C to stop"
     echo ""
     
-    java -jar "$PROJECT_DIR/build/quarkus-app/quarkus-run.jar"
+    if [ "$DEBUG" = "debug" ]; then
+        echo "Remote debugging enabled on port 5005"
+        java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 \
+             -jar "$PROJECT_DIR/build/quarkus-app/quarkus-run.jar"
+    else
+        java -jar "$PROJECT_DIR/build/quarkus-app/quarkus-run.jar"
+    fi
     
 else
     echo "Error: Invalid mode '$MODE'"
-    echo "Usage: $0 [dev|prod]"
+    echo "Usage: $0 [dev|prod] [debug]"
+    echo "  dev   - Development mode with hot reload"
+    echo "  prod  - Production mode"
+    echo "  debug - Enable remote debugging on port 5005"
     exit 1
 fi
