@@ -76,7 +76,7 @@ check {
 
 javadoc {
     options {
-        source = '17'
+        source = '21'
         memberLevel = JavadocMemberLevel.PUBLIC
         noHelp = true
     }
